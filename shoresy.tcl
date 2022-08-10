@@ -2,10 +2,11 @@
 #
 # Replies with a random insult from Letterkenny
 #
-# 8-6-2022 v0.1 - Initial version
+# 08-06-2022 v0.1 - Initial version
+# 08-10-2022 v0.2 - Adds 3% chance of chirping on text, exempting ignoreNicks
 
 namespace eval ::shoresy {
-    set ignoreNicks [list X $botnick ChanServ]
+    set ignoreNicks [list X $botnick ChanServ SplitServ]
 
     set response {
     "Fight me, see what happens!  Three things:  I hit you, you hit the pavement, and I jerk off on your driver's side door handle!"
@@ -45,9 +46,9 @@ proc ::shoresy::getrandomnick {chan} {
 	set members [chanlist $chan]
 
 	foreach nick $shoresy::ignoreNicks {
-        set idx [lsearch $members $nick]
+    set idx [lsearch $members $nick]
 		set members [lreplace $members $idx $idx]
-    }
+  }
 	set retval [lindex $members [expr {int(rand()*[llength $members])}]]
 	return $retval
 }
@@ -59,10 +60,20 @@ proc ::shoresy::respond {nick chan text} {
 
 proc ::shoresy::chan {nick uhost handle chan args} {
   global response botnick
+  
+  foreach en $::shoresy::ignoreNicks {
+    if {[string equal -nocase $en $nick]} {
+      return 1
+    }
+  }
   putserv "PRIVMSG $chan :[::shoresy::respond $nick $chan $args]"
 }
 
+proc ::shoresy::random {nick uhost handle chan args} {
+  if {rand()<0.03 && } ::shoresy::chan $nick $uhost $handle $chan $args
+}
 
 bind pubm - "% Fuck*you*Shoresy*" ::shoresy::chan
+bind pubm - "*" ::shoresy::random
 
 putlog "Loaded shoresy.tcl Script by Ayukawa"
