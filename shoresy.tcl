@@ -70,7 +70,7 @@ proc ::shoresy::chan {nick uhost handle chan args} {
 }
 
 proc ::shoresy::random {nick uhost handle chan args} {
-  if {rand()<0.03} ::shoresy::chan $nick $uhost $handle $chan $args
+  if {rand()<0.03} { ::shoresy::chan $nick $uhost $handle $chan $args }
 }
 
 bind pubm - "% Fuck*you*Shoresy*" ::shoresy::chan
