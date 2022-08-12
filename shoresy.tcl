@@ -6,9 +6,10 @@
 # 08-10-2022 v0.2 - Adds 3% chance of chirping on text, exempting ignoreNicks
 
 namespace eval ::shoresy {
-    set ignoreNicks [list X $botnick ChanServ SplitServ]
+  set timeoutSeconds 1800
+  set ignoreNicks [list X $botnick ChanServ SplitServ]
 
-    set response {
+  set response {
     "Fight me, see what happens!  Three things:  I hit you, you hit the pavement, and I jerk off on your driver's side door handle!"
     "You're made of spare parts, aren't you, bud?"
     "I wish you weren't so fuckin' awkward, bud."
@@ -36,7 +37,9 @@ namespace eval ::shoresy {
     "I didn't say any of that shit, you dumb broads, but I did say your breath could stop a Mack truck, %usernick%. I'll tell that to anyone who will listen!"
     "Tell your mom to leave me alone, she's been laying on my waterbed since Labor Day!"
     "Shoulda heard your mom last night, she sounded like my great aunt when I pop in for a surprise visit, like, 'Oooh!'"
-    }
+  }
+  set lastChirp 0
+  set chirpWindow 1
 }
 proc ::shoresy::mappersistent {nick chan str} {
 	return [string map [list %usernick% $nick %altnick% [::shoresy::getrandomnick $chan]] $str]
@@ -54,8 +57,13 @@ proc ::shoresy::getrandomnick {chan} {
 }
 
 proc ::shoresy::respond {nick chan text} {
-   set output [::shoresy::mappersistent $nick $chan [lindex $::shoresy::response [rand [llength $::shoresy::response]]]]  
-   return "Fuck you, $nick! $output"
+  set tmp [rand [llength $::shoresy::response]]
+  while { $::shoresy::lastChirp == $tmp } {
+    set tmp [rand [llength $::shoresy::response]]
+  }
+  set ::shoresy::lastChirp $tmp
+  set output [::shoresy::mappersistent $nick $chan [lindex $::shoresy::response $tmp]]  
+  return "Fuck you, $nick! $output"
 }
 
 proc ::shoresy::chan {nick uhost handle chan args} {
@@ -70,7 +78,11 @@ proc ::shoresy::chan {nick uhost handle chan args} {
 }
 
 proc ::shoresy::random {nick uhost handle chan args} {
-  if {rand()<0.03} { ::shoresy::chan $nick $uhost $handle $chan $args }
+  if {$::shoresy::chirpWindow == 1} {
+    if {rand()<0.01} { ::shoresy::chan $nick $uhost $handle $chan $args }
+    set ::shoresy::chirpWindow 0
+    utimer $::shoresy::timeoutSeconds [set ::shoresy::chirpWindow 1]
+  }
 }
 
 bind pubm - "% Fuck*you*Shoresy*" ::shoresy::chan
